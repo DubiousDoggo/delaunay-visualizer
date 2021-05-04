@@ -112,17 +112,20 @@ template <typename T> void delete_edge(edge_reference<T> &e) {
     e.q = nullptr;
 }
 
-// Delete the entire structure of the graph connected to edge e.
-template <typename T> void kill_graph(edge_reference<T> e) {
-    auto a = e.o_next();
-    auto b = e.d_next();
-    bool del_a = a.q != e.q;
-    bool del_b = b.q != e.q;
-    delete_edge(e);
-    if (del_a)
-        kill_graph(a);
-    if (del_b)
-        kill_graph(b);
+// Delete the entire structure of the graph connected to this edge.
+template <typename T> void kill_graph(edge_reference<T> edge) {
+    std::unordered_set<quad_edge<T> *> deleted;
+    std::deque<edge_reference<T>> edge_queue;
+    edge_queue.push_back(edge);
+    while (!edge_queue.empty()) {
+        edge_reference<T> e = edge_queue.front();
+        edge_queue.pop_front();
+        if (deleted.insert(e.q).second) { // e hasn't been deleted
+            edge_queue.push_back(e.o_next());
+            edge_queue.push_back(e.sym().o_next());
+            delete_edge(e);
+        }
+    }
 }
 
 namespace std {
